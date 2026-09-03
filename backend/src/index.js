@@ -2,14 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
-// Load environment variables
 dotenv.config();
 
-// Import database (this connects it)
 require('./config/database');
 
-// Import routes
 const blogRoutes = require('./routes/blog');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,9 +17,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ============================================
-// HEALTH CHECK
-// ============================================
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: '🦁 Lionheart is alive!',
@@ -35,8 +31,45 @@ app.get('/api', (req, res) => {
     name: 'Lionheart API',
     version: '0.1.0',
     message: 'One Heart. Many Channels.',
+    endpoints: {
+      health: { method: 'GET', path: '/api/health', description: 'Health check' },
+      auth: {
+        base: '/api/auth',
+        endpoints: [
+          { method: 'POST', path: '/api/auth/register', description: 'Register new user' },
+          { method: 'POST', path: '/api/auth/login', description: 'Login user' },
+          { method: 'GET', path: '/api/auth/me', description: 'Get current user profile (requires token)' }
+        ]
+      },
+      blog: {
+        base: '/api/blog',
+        endpoints: [
+          { method: 'GET', path: '/api/blog/categories', description: 'Get all categories' },
+          { method: 'GET', path: '/api/blog/categories/:slug', description: 'Get category by slug' }
+        ]
+      }
+    }
+  });
+});
+
+// ============================================
+// API BASE ROUTE INFO
+// ============================================
+app.get('/api/auth', (req, res) => {
+  res.json({
+    name: 'Lionheart Auth API',
     endpoints: [
-      { method: 'GET', path: '/api/health', description: 'Health check' },
+      { method: 'POST', path: '/api/auth/register', description: 'Register new user' },
+      { method: 'POST', path: '/api/auth/login', description: 'Login user' },
+      { method: 'GET', path: '/api/auth/me', description: 'Get current user profile' }
+    ]
+  });
+});
+
+app.get('/api/blog', (req, res) => {
+  res.json({
+    name: 'Lionheart Blog API',
+    endpoints: [
       { method: 'GET', path: '/api/blog/categories', description: 'Get all categories' },
       { method: 'GET', path: '/api/blog/categories/:slug', description: 'Get category by slug' }
     ]
@@ -47,6 +80,7 @@ app.get('/api', (req, res) => {
 // API ROUTES
 // ============================================
 app.use('/api/blog', blogRoutes);
+app.use('/api/auth', authRoutes);
 
 // ============================================
 // 404 HANDLER
@@ -78,7 +112,9 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🦁 Lionheart API is running!`);
   console.log(`📍 http://localhost:${PORT}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📚 Categories: http://localhost:${PORT}/api/blog/categories`);
+  console.log(`📡 Health: http://localhost:${PORT}/api/health`);
+  console.log(`📚 API Info: http://localhost:${PORT}/api`);
+  console.log(`🔐 Auth: http://localhost:${PORT}/api/auth`);
+  console.log(`📝 Blog: http://localhost:${PORT}/api/blog`);
   console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
