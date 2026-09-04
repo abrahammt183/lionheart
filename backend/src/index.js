@@ -45,16 +45,20 @@ app.get('/api', (req, res) => {
         base: '/api/blog',
         endpoints: [
           { method: 'GET', path: '/api/blog/categories', description: 'Get all categories' },
-          { method: 'GET', path: '/api/blog/categories/:slug', description: 'Get category by slug' }
+          { method: 'GET', path: '/api/blog/categories/:slug', description: 'Get category by slug' },
+          { method: 'GET', path: '/api/blog/posts', description: 'Get published posts' },
+          { method: 'GET', path: '/api/blog/posts/:slug', description: 'Get single post by slug' },
+          { method: 'GET', path: '/api/blog/posts/category/:slug', description: 'Get posts by category' },
+          { method: 'GET', path: '/api/blog/search', description: 'Search posts' },
+          { method: 'POST', path: '/api/blog/posts', description: 'Create new post (admin/editor)' },
+          { method: 'PUT', path: '/api/blog/posts/:id', description: 'Update post (admin/editor)' },
+          { method: 'DELETE', path: '/api/blog/posts/:id', description: 'Delete post (admin)' }
         ]
       }
     }
   });
 });
 
-// ============================================
-// API BASE ROUTE INFO
-// ============================================
 app.get('/api/auth', (req, res) => {
   res.json({
     name: 'Lionheart Auth API',
@@ -71,20 +75,20 @@ app.get('/api/blog', (req, res) => {
     name: 'Lionheart Blog API',
     endpoints: [
       { method: 'GET', path: '/api/blog/categories', description: 'Get all categories' },
-      { method: 'GET', path: '/api/blog/categories/:slug', description: 'Get category by slug' }
+      { method: 'GET', path: '/api/blog/categories/:slug', description: 'Get category by slug' },
+      { method: 'GET', path: '/api/blog/posts', description: 'Get published posts' },
+      { method: 'GET', path: '/api/blog/posts/:slug', description: 'Get single post by slug' },
+      { method: 'GET', path: '/api/blog/posts/category/:slug', description: 'Get posts by category' },
+      { method: 'GET', path: '/api/blog/search', description: 'Search posts' }
     ]
   });
 });
 
-// ============================================
-// API ROUTES
-// ============================================
+// API Routes
 app.use('/api/blog', blogRoutes);
 app.use('/api/auth', authRoutes);
 
-// ============================================
-// 404 HANDLER
-// ============================================
+// 404
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -92,9 +96,7 @@ app.use((req, res) => {
   });
 });
 
-// ============================================
-// ERROR HANDLER
-// ============================================
+// Error handler
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err.message);
   console.error(err.stack);
@@ -106,9 +108,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ============================================
-// START SERVER
-// ============================================
 app.listen(PORT, () => {
   console.log(`🦁 Lionheart API is running!`);
   console.log(`📍 http://localhost:${PORT}`);
@@ -116,5 +115,4 @@ app.listen(PORT, () => {
   console.log(`📚 API Info: http://localhost:${PORT}/api`);
   console.log(`🔐 Auth: http://localhost:${PORT}/api/auth`);
   console.log(`📝 Blog: http://localhost:${PORT}/api/blog`);
-  console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
