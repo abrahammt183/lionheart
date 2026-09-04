@@ -3,25 +3,35 @@ const db = require('../config/database');
 class Post {
   // Get all published posts
   static getPublished(limit = 10, offset = 0) {
-    const stmt = db.prepare(`
-      SELECT p.id, p.title, p.slug, p.excerpt, p.featured_image, 
-             p.views, p.published_at, p.created_at,
-             u.display_name as author_name,
-             c.name as category_name, c.slug as category_slug
-      FROM posts p
-      LEFT JOIN users u ON p.author_id = u.id
-      LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.status = 'published'
-      ORDER BY p.published_at DESC
-      LIMIT ? OFFSET ?
-    `);
-    return stmt.all(limit, offset);
+    try {
+      const stmt = db.prepare(`
+        SELECT p.id, p.title, p.slug, p.excerpt, p.featured_image, 
+               p.views, p.published_at, p.created_at,
+               u.display_name as author_name,
+               c.name as category_name, c.slug as category_slug
+        FROM posts p
+        LEFT JOIN users u ON p.author_id = u.id
+        LEFT JOIN categories c ON p.category_id = c.id
+        WHERE p.status = 'published'
+        ORDER BY COALESCE(p.published_at, p.created_at) DESC
+        LIMIT ? OFFSET ?
+      `);
+      return stmt.all(limit, offset);
+    } catch (error) {
+      console.error('Error in getPublished:', error);
+      return [];
+    }
   }
 
   // Count published posts
   static countPublished() {
-    const stmt = db.prepare('SELECT COUNT(*) as total FROM posts WHERE status = "published"');
-    return stmt.get().total;
+    try {
+      const stmt = db.prepare('SELECT COUNT(*) as total FROM posts WHERE status = "published"');
+      return stmt.get().total;
+    } catch (error) {
+      console.error('Error in countPublished:', error);
+      return 0;
+    }
   }
 
   // Get a single post by slug
@@ -43,11 +53,18 @@ class Post {
     const { title, slug, content, excerpt, category_id, author_id, status, featured_image } = data;
     
     const stmt = db.prepare(`
-      INSERT INTO posts (title, slug, content, excerpt, category_id, author_id, status, featured_image)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO posts (title, slug, content, excerpt, category_id, author_id, status, featured_image, published_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
-    const result = stmt.run(title, slug, content, excerpt, category_id, author_id, status || 'draft', featured_image || null);
+    // If status is published, set published_at to now
+    const publishedAt = status === 'published' ? new Date().toISOString().replace('T', ' ').slice(0, 19) : null;
+    
+    const result = stmt.run(
+      title, slug, content, excerpt || null, 
+      category_id || null, author_id, status || 'draft', 
+      featured_image || null, publishedAt
+    );
     return this.getById(result.lastInsertRowid);
   }
 
@@ -79,8 +96,12 @@ class Post {
       }
     }
 
-    if (data.status === 'published' && !data.published_at) {
-      fields.push('published_at = CURRENT_TIMESTAMP');
+    // Handle published_at
+    if (data.status === 'published') {
+      const current = this.getById(id);
+      if (!current || !current.published_at) {
+        fields.push('published_at = CURRENT_TIMESTAMP');
+      }
     }
 
     fields.push('updated_at = CURRENT_TIMESTAMP');
@@ -115,7 +136,7 @@ class Post {
       LEFT JOIN users u ON p.author_id = u.id
       LEFT JOIN categories c ON p.category_id = c.id
       WHERE p.status = 'published' AND c.slug = ?
-      ORDER BY p.published_at DESC
+      ORDER BY COALESCE(p.published_at, p.created_at) DESC
       LIMIT ? OFFSET ?
     `);
     return stmt.all(categorySlug, limit, offset);
