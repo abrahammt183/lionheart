@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const commentRoutes = require('./routes/comments');
 const mediaRoutes = require('./routes/media');
 const productRoutes = require('./routes/products');
+const orderRoutes = require('./routes/orders');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,12 +41,13 @@ app.get('/api', (req, res) => {
       blog: { base: '/api/blog', description: 'Blog endpoints' },
       comments: { base: '/api/comments', description: 'Comments endpoints' },
       media: { base: '/api/media', description: 'Media endpoints' },
-      products: { base: '/api/products', description: 'Store products endpoints' }
+      products: { base: '/api/products', description: 'Store products endpoints' },
+      orders: { base: '/api/orders', description: 'Orders endpoints' }
     }
   });
 });
 
-// Base route info
+// Base route info for each module
 app.get('/api/auth', (req, res) => {
   res.json({
     name: 'Lionheart Auth API',
@@ -114,12 +116,27 @@ app.get('/api/products', (req, res) => {
   });
 });
 
+app.get('/api/orders', (req, res) => {
+  res.json({
+    name: 'Lionheart Orders API',
+    endpoints: [
+      { method: 'POST', path: '/api/orders', description: 'Create a new order' },
+      { method: 'GET', path: '/api/orders/me', description: 'Get current user orders' },
+      { method: 'GET', path: '/api/orders/:id', description: 'Get order by ID' },
+      { method: 'GET', path: '/api/orders', description: 'Get all orders (admin)' },
+      { method: 'PUT', path: '/api/orders/:id/status', description: 'Update order status (admin)' },
+      { method: 'POST', path: '/api/orders/:id/cancel', description: 'Cancel an order' }
+    ]
+  });
+});
+
 // API Routes
 app.use('/api/blog', blogRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
 
 // 404
 app.use((req, res) => {
@@ -151,4 +168,5 @@ app.listen(PORT, () => {
   console.log(`💬 Comments: http://localhost:${PORT}/api/comments`);
   console.log(`🖼️  Media: http://localhost:${PORT}/api/media`);
   console.log(`🛒 Products: http://localhost:${PORT}/api/products`);
+  console.log(`📦 Orders: http://localhost:${PORT}/api/orders`);
 });
