@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 require('./config/database');
+require('./workers/outboxWorker');
 
 const blogRoutes = require('./routes/blog');
 const authRoutes = require('./routes/auth');
@@ -12,6 +13,7 @@ const commentRoutes = require('./routes/comments');
 const mediaRoutes = require('./routes/media');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
+const outboxRoutes = require('./routes/outbox');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,7 +44,8 @@ app.get('/api', (req, res) => {
       comments: { base: '/api/comments', description: 'Comments endpoints' },
       media: { base: '/api/media', description: 'Media endpoints' },
       products: { base: '/api/products', description: 'Store products endpoints' },
-      orders: { base: '/api/orders', description: 'Orders endpoints' }
+      orders: { base: '/api/orders', description: 'Orders endpoints' },
+      outbox: { base: '/api/outbox', description: 'Outbox (social media queue) endpoints' }
     }
   });
 });
@@ -130,6 +133,20 @@ app.get('/api/orders', (req, res) => {
   });
 });
 
+app.get('/api/outbox', (req, res) => {
+  res.json({
+    name: 'Lionheart Outbox API',
+    endpoints: [
+      { method: 'POST', path: '/api/outbox', description: 'Add message to outbox' },
+      { method: 'GET', path: '/api/outbox/pending', description: 'Get pending items (admin)' },
+      { method: 'GET', path: '/api/outbox', description: 'Get all outbox items (admin)' },
+      { method: 'DELETE', path: '/api/outbox/:id', description: 'Delete an outbox item (admin)' },
+      { method: 'POST', path: '/api/outbox/retry', description: 'Retry failed items (admin)' },
+      { method: 'POST', path: '/api/outbox/clean', description: 'Clean old items (admin)' }
+    ]
+  });
+});
+
 // API Routes
 app.use('/api/blog', blogRoutes);
 app.use('/api/auth', authRoutes);
@@ -137,6 +154,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/outbox', outboxRoutes);
 
 // 404
 app.use((req, res) => {
@@ -169,4 +187,5 @@ app.listen(PORT, () => {
   console.log(`🖼️  Media: http://localhost:${PORT}/api/media`);
   console.log(`🛒 Products: http://localhost:${PORT}/api/products`);
   console.log(`📦 Orders: http://localhost:${PORT}/api/orders`);
+  console.log(`📤 Outbox: http://localhost:${PORT}/api/outbox`);
 });
